@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VIGILNET - Panel de Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-gray-900 text-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+      <header
+        class="flex justify-between items-center border-b border-gray-800 pb-4 mb-6"
+      >
+        <div>
+          <h1 class="text-3xl font-bold text-red-500">🛡️ VIGILNET</h1>
+          <p class="text-gray-400 text-sm">
+            Monitoreo de Red en Tiempo Real contra Fraude por IA
+          </p>
+        </div>
+        <div
+          id="estado-conexion"
+          class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-600 text-white animate-pulse"
+        >
+          Conectando al Servidor...
+        </div>
+      </header>
+
+      <main class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+        <div
+          class="p-4 bg-gray-700 font-semibold text-lg flex justify-between items-center"
+        >
+          <span>Alertas de Navegación No Autorizada</span>
+          <span
+            id="contador-alertas"
+            class="bg-red-600 text-white text-xs px-2 py-1 rounded-full"
+            >0 Infracciones</span
+          >
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-700/50 text-gray-400 text-sm uppercase">
+                <th class="p-4">Hora</th>
+                <th class="p-4">Identificación (IP)</th>
+                <th class="p-4">Dominio de IA Consultado</th>
+                <th class="p-4 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="lista-alertas" class="divide-y divide-gray-700"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const listaAlertas = document.getElementById("lista-alertas");
+      const estadoConexion = document.getElementById("estado-conexion");
+      const contadorAlertas = document.getElementById("contador-alertas");
+      let totalInfracciones = 0;
+
+      // Conexión al canal WebSocket de FastAPI
+      const ws = new WebSocket(`ws://${window.location.host}/ws`);
+
+      ws.onopen = () => {
+        estadoConexion.innerText = "Sistema Activo";
+        estadoConexion.className =
+          "px-3 py-1 rounded-full text-xs font-semibold bg-green-600 text-white";
+      };
+
+      ws.onclose = () => {
+        estadoConexion.innerText = "Desconectado";
+        estadoConexion.className =
+          "px-3 py-1 rounded-full text-xs font-semibold bg-red-600 text-white";
+      };
+
+      ws.onmessage = (event) => {
+        const alerta = JSON.parse(event.data);
+        totalInfracciones++;
+        contadorAlertas.innerText = `${totalInfracciones} Infracciones`;
+
+        // Crear una nueva fila en la tabla con efecto de parpadeo de alerta
+        const nuevaFila = document.createElement("tr");
+        nuevaFila.className =
+          "bg-red-950/30 hover:bg-red-950/50 transition-colors animate-pulse";
+        nuevaFila.innerHTML = `
+                <td class="p-4 text-gray-400 font-mono text-sm">${alerta.hora}</td>
+                <td class="p-4 font-semibold text-red-400">${alerta.ip}</td>
+                <td class="p-4 font-mono text-yellow-400">${alerta.dominio}</td>
+                <td class="p-4 text-center">
+                    <span class="px-2 py-1 bg-red-600 text-white text-xs rounded font-bold">SOSPECHOSO</span>
+                </td>
+            `;
+
+        // Insertar la alerta al principio de la lista
+        listaAlertas.insertBefore(nuevaFila, listaAlertas.firstChild);
+      };
+    </script>
+  </body>
+</html>

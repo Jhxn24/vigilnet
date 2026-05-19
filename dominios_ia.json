@@ -1,0 +1,13 @@
+{
+  "descripciones": "Lista de dominios de Inteligencia Artificial monitoreados por VigilNet",
+  "dominios": [
+    "chatgpt.com",
+    "openai.com",
+    "gemini.google.com",
+    "bard.google.com",
+    "claude.ai",
+    "copilot.microsoft.com",
+    "deepseek.com",
+    "perplexities.ai"
+  ]
+}
