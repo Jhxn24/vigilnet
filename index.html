@@ -3,98 +3,447 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VIGILNET - Panel de Control</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>VIGILNET</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #111827;
+        --panel: #1f2937;
+        --line: #374151;
+        --muted: #9ca3af;
+        --text: #f9fafb;
+        --accent: #dc2626;
+        --ok: #16a34a;
+        --warn: #f59e0b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .shell {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 18px;
+        margin-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        color: #f87171;
+        font-size: clamp(28px, 4vw, 42px);
+        letter-spacing: 0;
+      }
+
+      h2 {
+        font-size: 20px;
+        margin-bottom: 14px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .status {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .status.ok {
+        border-color: rgba(22, 163, 74, 0.5);
+        color: #86efac;
+      }
+
+      .status.bad {
+        border-color: rgba(220, 38, 38, 0.5);
+        color: #fca5a5;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .panel-body {
+        padding: 20px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        background: #172033;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 28px;
+        margin-top: 6px;
+      }
+
+      label {
+        display: block;
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 12px;
+        color: var(--text);
+        background: #0f172a;
+        font-size: 16px;
+        margin-bottom: 14px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 6px;
+        padding: 12px 16px;
+        color: white;
+        background: var(--accent);
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #4b5563;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-top: 1px solid var(--line);
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .alert-row {
+        background: rgba(127, 29, 29, 0.35);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      @media (max-width: 760px) {
+        header,
+        .actions {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        th,
+        td {
+          min-width: 130px;
+        }
+      }
+    </style>
   </head>
-  <body class="bg-gray-900 text-gray-100 font-sans">
-    <div class="container mx-auto p-6">
-      <header
-        class="flex justify-between items-center border-b border-gray-800 pb-4 mb-6"
-      >
+  <body>
+    <div class="shell">
+      <header>
         <div>
-          <h1 class="text-3xl font-bold text-red-500">🛡️ VIGILNET</h1>
-          <p class="text-gray-400 text-sm">
-            Monitoreo de Red en Tiempo Real contra Fraude por IA
-          </p>
+          <h1>VIGILNET</h1>
+          <p class="muted">Control local de evaluaciones y monitoreo DNS en tiempo real</p>
         </div>
-        <div
-          id="estado-conexion"
-          class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-600 text-white animate-pulse"
-        >
-          Conectando al Servidor...
-        </div>
+        <div id="estado" class="status">Inicializando</div>
       </header>
 
-      <main class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-        <div
-          class="p-4 bg-gray-700 font-semibold text-lg flex justify-between items-center"
-        >
-          <span>Alertas de Navegación No Autorizada</span>
-          <span
-            id="contador-alertas"
-            class="bg-red-600 text-white text-xs px-2 py-1 rounded-full"
-            >0 Infracciones</span
-          >
-        </div>
+      <main id="portal-alumno" class="panel hidden">
+        <div class="panel-body">
+          <h2>Identificacion para ingresar al examen</h2>
+          <form id="form-registro">
+            <label for="nombre">Nombre completo</label>
+            <input id="nombre" name="nombre" autocomplete="name" required minlength="3" />
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-gray-700/50 text-gray-400 text-sm uppercase">
-                <th class="p-4">Hora</th>
-                <th class="p-4">Identificación (IP)</th>
-                <th class="p-4">Dominio de IA Consultado</th>
-                <th class="p-4 text-center">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="lista-alertas" class="divide-y divide-gray-700"></tbody>
-          </table>
+            <label for="codigo">Codigo universitario</label>
+            <input id="codigo" name="codigo" required minlength="2" />
+
+            <button type="submit">Registrar acceso</button>
+          </form>
+          <p id="mensaje-registro" class="muted" style="margin-top: 14px"></p>
+        </div>
+      </main>
+
+      <main id="panel-docente" class="hidden">
+        <section class="grid">
+          <div class="metric">
+            <span class="muted">Alertas</span>
+            <strong id="total-alertas">0</strong>
+          </div>
+          <div class="metric">
+            <span class="muted">Alumnos registrados</span>
+            <strong id="total-alumnos">0</strong>
+          </div>
+          <div class="metric">
+            <span class="muted">Modo</span>
+            <strong>DNS</strong>
+          </div>
+        </section>
+
+        <div class="stack">
+        <section class="panel">
+          <div class="panel-body actions">
+            <button id="btn-simular" type="button">Simular alerta</button>
+            <button id="btn-recargar" class="secondary" type="button">Recargar estado</button>
+          </div>
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Alumno</th>
+                  <th>Codigo</th>
+                  <th>IP</th>
+                  <th>Dominio</th>
+                  <th>Conteo</th>
+                  <th>Origen</th>
+                </tr>
+              </thead>
+              <tbody id="lista-alertas"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-body">
+            <h2>Alumnos logueados</h2>
+          </div>
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Nombre</th>
+                  <th>Codigo</th>
+                  <th>IP</th>
+                </tr>
+              </thead>
+              <tbody id="lista-alumnos"></tbody>
+            </table>
+          </div>
+        </section>
         </div>
       </main>
     </div>
 
     <script>
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      const esPanel = window.location.pathname.startsWith("/panel");
+      const estado = document.getElementById("estado");
+      const portalAlumno = document.getElementById("portal-alumno");
+      const panelDocente = document.getElementById("panel-docente");
       const listaAlertas = document.getElementById("lista-alertas");
-      const estadoConexion = document.getElementById("estado-conexion");
-      const contadorAlertas = document.getElementById("contador-alertas");
-      let totalInfracciones = 0;
+      const listaAlumnos = document.getElementById("lista-alumnos");
+      const totalAlertas = document.getElementById("total-alertas");
+      const totalAlumnos = document.getElementById("total-alumnos");
+      const alertasPorId = new Map();
+      const alumnosPorIp = new Map();
 
-      // Conexión al canal WebSocket de FastAPI
-      const ws = new WebSocket(`ws://${window.location.host}/ws`);
+      function setEstado(texto, clase) {
+        estado.textContent = texto;
+        estado.className = `status ${clase || ""}`;
+      }
 
-      ws.onopen = () => {
-        estadoConexion.innerText = "Sistema Activo";
-        estadoConexion.className =
-          "px-3 py-1 rounded-full text-xs font-semibold bg-green-600 text-white";
-      };
+      function crearCelda(texto) {
+        const td = document.createElement("td");
+        td.textContent = texto || "";
+        return td;
+      }
 
-      ws.onclose = () => {
-        estadoConexion.innerText = "Desconectado";
-        estadoConexion.className =
-          "px-3 py-1 rounded-full text-xs font-semibold bg-red-600 text-white";
-      };
+      function agregarAlerta(alerta) {
+        const alertaId = alerta.id || `${alerta.ip}|${alerta.dominio}`.toLowerCase();
+        alertasPorId.set(alertaId, alerta);
+        totalAlertas.textContent = Array.from(alertasPorId.values()).reduce(
+          (total, item) => total + Number(item.conteo || 1),
+          0,
+        );
 
-      ws.onmessage = (event) => {
-        const alerta = JSON.parse(event.data);
-        totalInfracciones++;
-        contadorAlertas.innerText = `${totalInfracciones} Infracciones`;
+        const filaAnterior = document.querySelector(`[data-alerta-id="${CSS.escape(alertaId)}"]`);
+        if (filaAnterior) {
+          filaAnterior.replaceWith(crearFilaAlerta(alerta, alertaId));
+          return;
+        }
 
-        // Crear una nueva fila en la tabla con efecto de parpadeo de alerta
-        const nuevaFila = document.createElement("tr");
-        nuevaFila.className =
-          "bg-red-950/30 hover:bg-red-950/50 transition-colors animate-pulse";
-        nuevaFila.innerHTML = `
-                <td class="p-4 text-gray-400 font-mono text-sm">${alerta.hora}</td>
-                <td class="p-4 font-semibold text-red-400">${alerta.ip}</td>
-                <td class="p-4 font-mono text-yellow-400">${alerta.dominio}</td>
-                <td class="p-4 text-center">
-                    <span class="px-2 py-1 bg-red-600 text-white text-xs rounded font-bold">SOSPECHOSO</span>
-                </td>
-            `;
+        listaAlertas.prepend(crearFilaAlerta(alerta, alertaId));
+      }
 
-        // Insertar la alerta al principio de la lista
-        listaAlertas.insertBefore(nuevaFila, listaAlertas.firstChild);
-      };
+      function crearFilaAlerta(alerta, alertaId) {
+        const tr = document.createElement("tr");
+        tr.className = "alert-row";
+        tr.dataset.alertaId = alertaId;
+        tr.append(
+          crearCelda(alerta.hora),
+          crearCelda(alerta.nombre),
+          crearCelda(alerta.codigo),
+          crearCelda(alerta.ip),
+          crearCelda(alerta.dominio),
+          crearCelda(alerta.conteo || "1"),
+          crearCelda(alerta.origen),
+        );
+        return tr;
+      }
+
+      function renderizarAlumnos() {
+        listaAlumnos.textContent = "";
+        const alumnos = Array.from(alumnosPorIp.values()).sort((a, b) =>
+          (b.hora || "").localeCompare(a.hora || ""),
+        );
+        totalAlumnos.textContent = alumnos.length;
+
+        alumnos.forEach((alumno) => {
+          const tr = document.createElement("tr");
+          tr.append(
+            crearCelda(alumno.hora),
+            crearCelda(alumno.nombre),
+            crearCelda(alumno.codigo),
+            crearCelda(alumno.ip),
+          );
+          listaAlumnos.append(tr);
+        });
+      }
+
+      function agregarAlumno(alumno) {
+        alumnosPorIp.set(alumno.ip, alumno);
+        renderizarAlumnos();
+      }
+
+      async function cargarEstado() {
+        const resp = await fetch(`/api/estado?token=${encodeURIComponent(token)}`);
+        if (!resp.ok) {
+          setEstado("Token docente invalido", "bad");
+          return;
+        }
+        const data = await resp.json();
+        alertasPorId.clear();
+        listaAlertas.textContent = "";
+        alumnosPorIp.clear();
+        data.alumnos.forEach(agregarAlumno);
+        data.alertas.forEach(agregarAlerta);
+        setEstado("Panel conectado", "ok");
+      }
+
+      function iniciarPanel() {
+        panelDocente.classList.remove("hidden");
+        cargarEstado();
+
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${wsScheme}://${window.location.host}/ws?token=${encodeURIComponent(token)}`);
+
+        ws.onopen = () => setEstado("Monitoreo activo", "ok");
+        ws.onclose = () => setEstado("WebSocket desconectado", "bad");
+        ws.onmessage = (event) => {
+          const mensaje = JSON.parse(event.data);
+          if (mensaje.tipo === "alumno") {
+            agregarAlumno(mensaje.alumno);
+          }
+          if (mensaje.tipo === "alerta") {
+            agregarAlerta(mensaje.alerta);
+          }
+        };
+
+        document.getElementById("btn-recargar").addEventListener("click", cargarEstado);
+        document.getElementById("btn-simular").addEventListener("click", async () => {
+          await fetch(`/simular?token=${encodeURIComponent(token)}`);
+        });
+      }
+
+      function iniciarPortal() {
+        portalAlumno.classList.remove("hidden");
+        setEstado("Portal de alumno", "");
+
+        document.getElementById("form-registro").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          const resp = await fetch("/api/alumnos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              nombre: form.get("nombre"),
+              codigo: form.get("codigo"),
+            }),
+          });
+
+          const mensaje = document.getElementById("mensaje-registro");
+          if (resp.ok) {
+            mensaje.textContent = "Registro completado. Ya puedes continuar con la evaluacion.";
+            event.currentTarget.reset();
+          } else {
+            mensaje.textContent = "No se pudo registrar el acceso. Revisa los datos.";
+          }
+        });
+      }
+
+      if (esPanel) {
+        iniciarPanel();
+      } else {
+        iniciarPortal();
+      }
     </script>
   </body>
 </html>
